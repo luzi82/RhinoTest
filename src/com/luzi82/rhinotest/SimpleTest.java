@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
@@ -151,6 +152,30 @@ public class SimpleTest {
 		Assert.assertEquals(800, sa.get("width", sa));
 		Assert.assertEquals(600, sa.get("height", sa));
 		Assert.assertEquals(800, sa.get("extra", sa));
+
+		Context.exit();
+	}
+
+	/**
+	 * Test function call
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	@Test
+	public void test3() throws FileNotFoundException, IOException {
+		Context cx = Context.enter();
+
+		Scriptable scope = cx.initStandardObjects();
+
+		Object result = cx.evaluateReader(scope,
+				new FileReader("res/test3.js"), "res/test3.js", 0, null);
+//		System.err.println(result.getClass().getName());
+
+		Function f = (Function) result;
+		Object result2 = f.call(cx, scope, f, new Object[]{42});
+
+		Scriptable sa = (Scriptable) result2;
+		Assert.assertEquals(42, sa.get("a", sa));
 
 		Context.exit();
 	}
