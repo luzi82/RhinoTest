@@ -24,7 +24,7 @@ public class SimpleTest {
 		Context.exit();
 	}
 
-	static public class X {
+	static public class X0 {
 		public String v() {
 			return "Hello";
 		}
@@ -34,7 +34,7 @@ public class SimpleTest {
 	public void javaBind() {
 		Context cx = Context.enter();
 		Scriptable scope = cx.initStandardObjects();
-		Object x = Context.javaToJS(new X(), scope);
+		Object x = Context.javaToJS(new X0(), scope);
 		ScriptableObject.putProperty(scope, "x", x);
 		Object result = cx.evaluateString(scope, "x.v()", "<cmd>", 0, null);
 		result = Context.jsToJava(result, String.class);
@@ -88,6 +88,7 @@ public class SimpleTest {
 
 	/**
 	 * Test access obj property
+	 * 
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
@@ -99,7 +100,7 @@ public class SimpleTest {
 
 		Object result = cx.evaluateReader(scope,
 				new FileReader("res/test0.js"), "res/test0.js", 0, null);
-//		System.err.println(result.getClass().getName());
+		// System.err.println(result.getClass().getName());
 
 		Scriptable sa = (Scriptable) result;
 		Assert.assertEquals(800, sa.get("width", sa));
@@ -111,6 +112,7 @@ public class SimpleTest {
 
 	/**
 	 * Test access property as function and exec
+	 * 
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
@@ -122,19 +124,24 @@ public class SimpleTest {
 
 		Object result = cx.evaluateReader(scope,
 				new FileReader("res/test1.js"), "res/test1.js", 0, null);
-//		System.err.println(result.getClass().getName());
+		// System.err.println(result.getClass().getName());
 
 		Scriptable sa = (Scriptable) result;
-		Assert.assertEquals(800,((Callable) sa.get("width", sa)).call(cx, scope, null, null));
-		Assert.assertEquals(600,((Callable) sa.get("height", sa)).call(cx, scope, null, null));
-		Assert.assertEquals("#ff7f7f7f",((Callable) sa.get("backgroundColor", sa)).call(cx, scope, null, null));
-		Assert.assertEquals(800,((Callable) sa.get("extra", sa)).call(cx, scope, null, null));
+		Assert.assertEquals(800,
+				((Callable) sa.get("width", sa)).call(cx, scope, null, null));
+		Assert.assertEquals(600,
+				((Callable) sa.get("height", sa)).call(cx, scope, null, null));
+		Assert.assertEquals("#ff7f7f7f", ((Callable) sa.get("backgroundColor",
+				sa)).call(cx, scope, null, null));
+		Assert.assertEquals(800,
+				((Callable) sa.get("extra", sa)).call(cx, scope, null, null));
 
 		Context.exit();
 	}
 
 	/**
 	 * Test access property by getter
+	 * 
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
@@ -146,7 +153,7 @@ public class SimpleTest {
 
 		Object result = cx.evaluateReader(scope,
 				new FileReader("res/test2.js"), "res/test2.js", 0, null);
-//		System.err.println(result.getClass().getName());
+		// System.err.println(result.getClass().getName());
 
 		Scriptable sa = (Scriptable) result;
 		Assert.assertEquals(800, sa.get("width", sa));
@@ -157,7 +164,8 @@ public class SimpleTest {
 	}
 
 	/**
-	 * Test function call
+	 * Test array pass
+	 * 
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
@@ -169,13 +177,88 @@ public class SimpleTest {
 
 		Object result = cx.evaluateReader(scope,
 				new FileReader("res/test3.js"), "res/test3.js", 0, null);
-//		System.err.println(result.getClass().getName());
+		// System.err.println(result.getClass().getName());
 
 		Function f = (Function) result;
-		Object result2 = f.call(cx, scope, f, new Object[]{42});
+		Object result2 = f.call(cx, scope, f, new Object[] { 42 });
 
 		Scriptable sa = (Scriptable) result2;
 		Assert.assertEquals(42, sa.get("a", sa));
+
+		Context.exit();
+	}
+
+	@Test
+	public void test3a() throws FileNotFoundException, IOException {
+		Context cx = Context.enter();
+
+		Scriptable scope = cx.initStandardObjects();
+
+		Object result = cx.evaluateReader(scope,
+				new FileReader("res/test3.js"), "res/test3.js", 0, null);
+		// System.err.println(result.getClass().getName());
+
+		int[] arrayIn = { 42 };
+
+		Function f = (Function) result;
+		Object result2 = f.call(cx, scope, f, new Object[] { arrayIn });
+
+		Scriptable sa = (Scriptable) result2;
+		Object obj = sa.get("a", sa);
+		int[] arrayOut = (int[]) obj;
+		Assert.assertEquals(42, arrayOut[0]);
+
+		arrayIn[0] = 41;
+		obj = sa.get("a", sa);
+		arrayOut = (int[]) obj;
+		Assert.assertEquals(41, arrayOut[0]);
+
+		Context.exit();
+	}
+
+	static public class T4 {
+		public int bb = 100;
+
+		public int b() {
+			return bb;
+		}
+	}
+
+	/**
+	 * test object call
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	@Test
+	public void test4() throws FileNotFoundException, IOException {
+		Context cx = Context.enter();
+
+		Scriptable scope = cx.initStandardObjects();
+		T4 t = new T4();
+		Object to = Context.javaToJS(t, scope);
+
+		Object result = cx.evaluateReader(scope,
+				new FileReader("res/test4.js"), "res/test4.js", 0, null);
+
+		Function f = (Function) result;
+		Object result2 = f.call(cx, scope, f, new Object[] { to });
+
+		Scriptable sa = (Scriptable) result2;
+		Object obj = sa.get("a", sa);
+		Assert.assertEquals(100, obj);
+		obj = sa.get("b", sa);
+		Assert.assertEquals(101d, (double) obj, 0.00001d);
+		obj = sa.get("aa", sa);
+		Assert.assertEquals(100, obj);
+
+		t.bb = 200;
+
+		obj = sa.get("a", sa);
+		Assert.assertEquals(200, obj);
+		obj = sa.get("b", sa);
+		Assert.assertEquals(201d, (double) obj, 0.00001d);
+		obj = sa.get("aa", sa);
+		Assert.assertEquals(200, obj);
 
 		Context.exit();
 	}
