@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Categories.ExcludeCategory;
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -111,6 +112,31 @@ public class SimpleTest {
 	}
 
 	/**
+	 * Test multi context
+	 * 
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	@Test
+	public void test0x() throws FileNotFoundException, IOException {
+		Context cx = Context.enter();
+		Scriptable scope = cx.initStandardObjects();
+		Context.exit();
+
+		cx = Context.enter();
+		Object result = cx.evaluateReader(scope,
+				new FileReader("res/test0.js"), "res/test0.js", 0, null);
+		Context.exit();
+
+		// System.err.println(result.getClass().getName());
+
+		Scriptable sa = (Scriptable) result;
+		Assert.assertEquals(800, sa.get("width", sa));
+		Assert.assertEquals(600, sa.get("height", sa));
+		Assert.assertEquals("#ff7f7f7f", sa.get("backgroundColor", sa));
+	}
+
+	/**
 	 * Test access property as function and exec
 	 * 
 	 * @throws FileNotFoundException
@@ -161,6 +187,28 @@ public class SimpleTest {
 		Assert.assertEquals(800, sa.get("extra", sa));
 
 		Context.exit();
+	}
+
+	/**
+	 * Test access property by getter, after context exit
+	 * 
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	@Test(expected = RuntimeException.class)
+	public void test2x() throws FileNotFoundException, IOException {
+		Context cx = Context.enter();
+
+		Scriptable scope = cx.initStandardObjects();
+
+		Object result = cx.evaluateReader(scope,
+				new FileReader("res/test2.js"), "res/test2.js", 0, null);
+		Context.exit();
+
+		Scriptable sa = (Scriptable) result;
+		Assert.assertEquals(800, sa.get("width", sa)); // exception here!!!
+		Assert.assertEquals(600, sa.get("height", sa));
+		Assert.assertEquals(800, sa.get("extra", sa));
 	}
 
 	/**
@@ -226,6 +274,7 @@ public class SimpleTest {
 
 	/**
 	 * test object call
+	 * 
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
