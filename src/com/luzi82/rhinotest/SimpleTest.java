@@ -10,6 +10,7 @@ import org.junit.experimental.categories.Categories.ExcludeCategory;
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
+import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
@@ -308,6 +309,47 @@ public class SimpleTest {
 		Assert.assertEquals(201d, (double) obj, 0.00001d);
 		obj = sa.get("aa", sa);
 		Assert.assertEquals(200, obj);
+
+		Context.exit();
+	}
+
+	static public class T5 {
+		public Scriptable scope;
+
+		public Object b() {
+			return Context.javaToJS("hello", scope);
+		}
+	}
+
+	/**
+	 * test string pass call
+	 * 
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	@Test
+	public void test5() throws FileNotFoundException, IOException {
+		Context cx = Context.enter();
+
+		Scriptable scope = cx.initStandardObjects();
+		T5 t = new T5();
+		t.scope = scope;
+		Object to = Context.javaToJS(t, scope);
+
+		Object result = cx.evaluateReader(scope,
+				new FileReader("res/test5.js"), "res/test5.js", 0, null);
+
+		Function f = (Function) result;
+		Object result2 = f.call(cx, scope, f, new Object[] { to });
+
+		Scriptable sa = (Scriptable) result2;
+		Object obj = sa.get("c", sa);
+		Assert.assertEquals("asdf", obj);
+		NativeJavaObject njo = (NativeJavaObject) sa.get("a", sa);
+		obj = njo.unwrap(); // fuck u rhino
+		Assert.assertEquals("hello", obj);
+		obj = sa.get("b", sa);
+		Assert.assertEquals("helloasdf", obj);
 
 		Context.exit();
 	}
